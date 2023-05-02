@@ -251,7 +251,7 @@ class Explosion {
 
         this.sound = new Audio();
         this.sound.src = clinkSNDSrc;
-        this.sound.volume = Math.random()*0.05 + 0.005;
+        this.sound.volume = Math.random()*0.04 + 0.01;
 
     }
     update(){
@@ -282,9 +282,9 @@ function drawScore() {
         33)
 }
 
-window.addEventListener('click', function(e) {
-    let posX = e.x - canvasPosition.left;
-    let posY = e.y - canvasPosition.top;
+function onTap (x, y) {
+    let posX = x - canvasPosition.left;
+    let posY = y - canvasPosition.top;
     
     // collisions detection by color
     const detectPixelColor = collisionCtx.getImageData(posX, posY, 1, 1)    
@@ -299,8 +299,11 @@ window.addEventListener('click', function(e) {
     explosions.push(new Explosion(posX, posY));
     console.log(explosions.length);
     console.log(explosions)
-})
+}
 
+
+window.addEventListener('click', e => onTap (e.x, e.y));
+window.addEventListener('touchstart', e => onTap (e.x, e.y));
 
 function animate(timestamp) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
