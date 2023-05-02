@@ -21,15 +21,22 @@ const clinkSNDSrc = assetsUrl + 'Match_striking.wav'
 // compensate positions between mouse and canvas
 let canvasPosition = canvas.getBoundingClientRect();
 
+// === game properties ===
 let gameSpeed = 1;
 let gameFrame = 0;
 
 let score = 0;
+let gameOver = false;
 
 
 
-class Layer {
-    
+
+function getRGBString (array) {
+    return `rgb(${array[0]}, ${array[1]}, ${array[2]})`;
+}
+
+
+class Layer {    
     constructor(imgSrc, widthOrig, heightOrig, width = 0, height = 0, k = 1) {
         
         this.img = new Image();
@@ -37,8 +44,7 @@ class Layer {
         this.widthOrig = widthOrig;
         this.heightOrig = heightOrig;
         this.width = width;
-        this.height = height;     
-
+        this.height = height;   
 
         this.k = k
         this.speed = gameSpeed*this.k;
@@ -48,7 +54,6 @@ class Layer {
 
         this.frameWidth = canvas.width;
         this.frames_n =  Math.ceil(this.frameWidth/this.width)*2
-
     }
 
     setPropHeight () {
@@ -120,10 +125,6 @@ const bgLayers = backgrounds.map((bg) => {
 );
 
 
-function getRGBString (array) {
-    return `rgb(${array[0]}, ${array[1]}, ${array[2]})`;
-}
-
 
 class Demon {
     constructor() {
@@ -138,7 +139,6 @@ class Demon {
         this.frameHeight = this.heightOrig;
         this.frame = 0;
         this.frameSpeed = 10;
-
 
         this.scale = 5*(Math.random()*1.5+0.75)*this.frameHeight / canvas.height;
         this.width = this.frameWidth*this.scale;
@@ -201,7 +201,6 @@ class Demon {
                 // game frame and image frame relation
                 rel = gameFrame % this.frameSpeed === 0;
         }
-
         
         if (rel) {
             this.frame++;
@@ -254,10 +253,13 @@ class Explosion {
         this.sound.src = clinkSNDSrc;
         this.sound.volume = Math.random()*0.08 + 0.03;
 
+        this.markedForDeletion = false;
+
     }
     update(){
         this.timer++;
         this.timer % 5 == 0 ? this.frame++ : 'else';
+        if (this.frame > this.frameN) this.markedForDeletion = true; 
         
     }
     draw(){
@@ -266,7 +268,7 @@ class Explosion {
     }
 }
 
-const explosions = [];
+let explosions = [];
 
 function drawScore() {
     ctx.font = '20px impact';
@@ -282,6 +284,7 @@ function drawScore() {
         canvas.width - 96, 
         33)
 }
+ 
 
 function onTap (x, y) {
     let posX = x - canvasPosition.left;
@@ -296,9 +299,8 @@ function onTap (x, y) {
             score++;
         }        
     });
-    
-    explosions.push(new Explosion(posX, posY));
-    
+
+    explosions.push(new Explosion(posX, posY));    
 }
 
 
@@ -331,37 +333,23 @@ function animate(timestamp) {
             return a.scale - b.scale;
         })
     }
-    
-    for (let i = 0; i < demons.length; i++){
-        demons[i].update();
-        demons[i].draw(dt);
-
-    }    
-
-    // only contain items where object.markedForDeletion = false
-    demons = demons.filter(object => !object.markedForDeletion);
 
 
     // [] array literal
     // ... spread operator
     /*
-    This syntax allows to call same methods for different classes simultaneously
-
-    [...demons].forEach(object => object.update());
-    [...demons].forEach(object => object.draw());
+    This syntax allows to call same methods for different classes simultaneously   
+    Pros:
+        - less code with same functionality
+    Cons:
+        - methods should be identical
     */
+    [...demons, ...explosions].forEach(object => object.update());
+    [...demons, ...explosions].forEach(object => object.draw(dt));    
 
-
-    for (let i = 0; i < explosions.length; i++){
-        explosions[i].update();
-        explosions[i].draw();
-        if (explosions[i].frame > explosions[i].frameN) {
-            explosions.splice(i, 1);
-            i--;
-        }
-    }    
-    
-    // explosions = explosions.filter(e => e.frame <= e.frameN);
+    // only contain items where object.markedForDeletion = false
+    demons = demons.filter(object => !object.markedForDeletion);
+    explosions = explosions.filter(object => !object.markedForDeletion);    
 
     gameFrame++;
     requestAnimationFrame(animate);
