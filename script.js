@@ -1,11 +1,5 @@
 /** @type {HTMLCanvasElement} */
-/*
-const div1 = document.getElementById('div1');
-console.log(div1.clientWidth, div1.clientHeight)
 
-const div2 = document.getElementById('div2');
-console.log(window.innerWidth, window.innerHeight)
-*/
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
