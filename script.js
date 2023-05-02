@@ -177,12 +177,13 @@ class Demon {
 
         // === HANDLE Y ===
         this.y -= this.directionY;
-
         // bounce
         if (this.y <= 0 || this.y >= canvas.height - this.height) {
-            
             this.directionY *= -1;            
         }; 
+
+        // GAME OVER
+        if (this.x < 0 - this.width) gameOver = true;
     }
 
     draw(dt, method = 'time') {       
@@ -271,7 +272,7 @@ class Explosion {
 let explosions = [];
 
 function drawScore() {
-    ctx.font = '20px impact';
+    ctx.font = '30px impact';
     // draw text 2 times to create shadow effect
     ctx.fillStyle = 'black';
     ctx.fillText(
@@ -301,6 +302,19 @@ function onTap (x, y) {
     });
 
     explosions.push(new Explosion(posX, posY));    
+}
+
+function drawGameOver() {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+
+    const text = 'Game Over\nScore: ' + score;
+    ctx.fillStyle = 'crimson';
+    ctx.textAlign = 'center';    
+    ctx.fillText(text, canvas.width/2, canvas.height/2);
+
+    ctx.fillStyle = 'white';
+    ctx.fillText(text, canvas.width/2 + 5, canvas.height/2 + 5);
 }
 
 
@@ -352,7 +366,9 @@ function animate(timestamp) {
     explosions = explosions.filter(object => !object.markedForDeletion);    
 
     gameFrame++;
-    requestAnimationFrame(animate);
+    
+    if (!gameOver) requestAnimationFrame(animate);
+    else drawGameOver();
 }
 
 // passes first timestamp value, otherwise it is undefined
