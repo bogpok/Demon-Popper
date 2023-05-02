@@ -25,10 +25,9 @@ body {
 
 #canvas1 {
     border: 3px solid white;
-    position: absolute;
-    height: 320px;
-    width: 480px;
-    
+    position: absolute;    
+    height: 960px;
+    width: 540px;    
     top: 50%;
     left: 50%;
     /* only for position absolute */
@@ -36,13 +35,15 @@ body {
 }
 
 #collCanv {
+    /*
     position: absolute;
     height: 320px;
     width: 480px;
     top: 50%;
     left: 50%;
-    /* only for position absolute */
+    
     transform: translate(-50%, -50%);
+    */
 
     opacity: 0;
 }

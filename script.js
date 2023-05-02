@@ -2,13 +2,14 @@
 
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
-canvas.width = 240*2;
-canvas.height = 160*2;
+canvas.width = 540;
+canvas.height = 960;
 
 const collisionCanv = document.getElementById('collCanv');
 const collisionCtx = collisionCanv.getContext('2d', { willReadFrequently: true });
-collisionCanv.width = 240*2;
-collisionCanv.height = 160*2;
+
+collisionCanv.width = 540;
+collisionCanv.height = 960;
 
 const assetsUrl = './assets/';
 const demonSrc = assetsUrl+'demon-idle.png';
@@ -138,7 +139,7 @@ class Demon {
         this.frameSpeed = 10;
 
 
-        this.scale = (Math.random()*1.5+0.75)*this.frameHeight / canvas.height;
+        this.scale = 5*(Math.random()*1.5+0.75)*this.frameHeight / canvas.height;
         this.width = this.frameWidth*this.scale;
         this.height = this.frameHeight*this.scale;
 
