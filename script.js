@@ -10,11 +10,11 @@ const collisionCtx = collisionCanv.getContext('2d');
 collisionCanv.width = 240*2;
 collisionCanv.height = 160*2;
 
-const assetsUrl = 'C:/Users/Bogdan/Documents/src/0_ASSETS/';
-const demonSrc = assetsUrl+'gothicvania-patreon-collection/demon-Files/PNG/demon-idle.png';
-const cemeteryUrl = assetsUrl+'gothicvania-cemetery-files/PNG/Environment/';
-const fireSrc = assetsUrl+'gothicvania-patreon-collection/demon-Files/PNG/breath.png';
-const clinkSNDSrc = assetsUrl + 'SOUND/Horror SFX Free/House & Office/Can_clink_4.wav'
+const assetsUrl = './assets/';
+const demonSrc = assetsUrl+'demon-idle.png';
+const fireSrc = assetsUrl+'breath.png';
+const cemeteryUrl = assetsUrl+'bg/';
+const clinkSNDSrc = assetsUrl + 'Match_striking.wav'
 
 // compensate positions between mouse and canvas
 let canvasPosition = canvas.getBoundingClientRect();
