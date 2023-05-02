@@ -1,15 +1,22 @@
 /** @type {HTMLCanvasElement} */
 
+const div1 = document.getElementById('div1');
+console.log(div1.clientWidth, div1.clientHeight)
+
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
-canvas.width = 540;
-canvas.height = 700;
+canvas.width = div1.clientWidth;
+canvas.height = div1.clientHeight;
+
+
+
 
 const collisionCanv = document.getElementById('collCanv');
 const collisionCtx = collisionCanv.getContext('2d', { willReadFrequently: true });
-
-collisionCanv.width = 540;
-collisionCanv.height = 700;
+// collisionCanv.width = 540;
+// collisionCanv.height = 700;
+collisionCanv.width = div1.clientWidth;
+collisionCanv.height = div1.clientHeight;
 
 const assetsUrl = './assets/';
 const demonSrc = assetsUrl+'demon-idle.png';
@@ -251,7 +258,7 @@ class Explosion {
 
         this.sound = new Audio();
         this.sound.src = clinkSNDSrc;
-        this.sound.volume = Math.random()*0.04 + 0.01;
+        this.sound.volume = Math.random()*0.08 + 0.03;
 
     }
     update(){
@@ -301,8 +308,8 @@ function onTap (x, y) {
 }
 
 
-window.addEventListener('click', e => onTap (e.x, e.y));
-window.addEventListener('touchstart', e => onTap (e.x, e.y));
+canvas.addEventListener('click', e => onTap (e.x, e.y));
+canvas.addEventListener('touchstart', e => onTap (e.x, e.y));
 
 function animate(timestamp) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
