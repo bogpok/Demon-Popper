@@ -1,0 +1,53 @@
+/*
+body {
+    background: linear-gradient(140deg, red,green,blue);
+    
+    width: 100vw;
+    height: 100vh;
+    
+    overflow: hidden;
+}
+*/
+html {
+    margin: 0px;
+    border: 5px dashed red;
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    background: black;
+}
+
+#div1 {
+    height: 900px;
+    width: 600px;
+}
+
+#div2{
+    color:beige;
+    height: 100%;
+    width: 100%;
+}
+
+canvas {
+    
+    /* height: 700px;
+    width: 500px;  */
+    /* height: 100%;
+    width: 100%; */
+
+    position: absolute;
+    top: 50%; 
+    left: 50%;    
+    /* only for position absolute */
+    transform: translate(-50%, -50%);
+}
+
+#canvas1 {
+    border: 3px solid white;    
+}
+
+#collCanv {    
+    opacity: 0;
+}

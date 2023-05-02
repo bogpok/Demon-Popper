@@ -1,22 +1,22 @@
 /** @type {HTMLCanvasElement} */
-
+/*
 const div1 = document.getElementById('div1');
 console.log(div1.clientWidth, div1.clientHeight)
 
+const div2 = document.getElementById('div2');
+console.log(window.innerWidth, window.innerHeight)
+*/
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
-canvas.width = div1.clientWidth;
-canvas.height = div1.clientHeight;
-
-
-
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
 const collisionCanv = document.getElementById('collCanv');
 const collisionCtx = collisionCanv.getContext('2d', { willReadFrequently: true });
 // collisionCanv.width = 540;
 // collisionCanv.height = 700;
-collisionCanv.width = div1.clientWidth;
-collisionCanv.height = div1.clientHeight;
+collisionCanv.width = canvas.width;
+collisionCanv.height = canvas.height;
 
 const assetsUrl = './assets/';
 const demonSrc = assetsUrl+'demon-idle.png';
