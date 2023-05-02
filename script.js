@@ -6,7 +6,7 @@ canvas.width = 240*2;
 canvas.height = 160*2;
 
 const collisionCanv = document.getElementById('collCanv');
-const collisionCtx = collisionCanv.getContext('2d');
+const collisionCtx = collisionCanv.getContext('2d', { willReadFrequently: true });
 collisionCanv.width = 240*2;
 collisionCanv.height = 160*2;
 
@@ -37,7 +37,6 @@ class Layer {
         this.width = width;
         this.height = height;     
 
-        console.log(this.width)
 
         this.k = k
         this.speed = gameSpeed*this.k;
@@ -106,7 +105,7 @@ const backgrounds = [
 ]
 
 const bgLayers = backgrounds.map((bg) => {
-    console.log(bg)
+    
     return new Layer(
         bg.url, 
         widthOrig = bg.width, 
@@ -179,7 +178,7 @@ class Demon {
 
         // bounce
         if (this.y <= 0 || this.y >= canvas.height - this.height) {
-            //console.log(this.y, this.height)
+            
             this.directionY *= -1;            
         }; 
     }
@@ -297,8 +296,7 @@ function onTap (x, y) {
     });
     
     explosions.push(new Explosion(posX, posY));
-    console.log(explosions.length);
-    console.log(explosions)
+    
 }
 
 
