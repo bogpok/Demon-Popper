@@ -3,13 +3,13 @@
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = 540;
-canvas.height = 960;
+canvas.height = 700;
 
 const collisionCanv = document.getElementById('collCanv');
 const collisionCtx = collisionCanv.getContext('2d', { willReadFrequently: true });
 
 collisionCanv.width = 540;
-collisionCanv.height = 960;
+collisionCanv.height = 700;
 
 const assetsUrl = './assets/';
 const demonSrc = assetsUrl+'demon-idle.png';
