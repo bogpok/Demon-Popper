@@ -1,6 +1,13 @@
 document.addEventListener('load', processGame);
 
 function processGame() {
+    const canvas = document.getElementById('canvas1');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    ctx.fillRect(0,0,500,500)
+
     class Game {
         constructor(ctx, width, height) {
             this.ctx = ctx;
@@ -33,7 +40,7 @@ function processGame() {
         // private method
         // call only within class
         #addNewEnemy() {
-            this.enemies.push(new Enemy(this));
+            this.enemies.push(new Nightmare(this));
 
         }
     }
@@ -44,7 +51,7 @@ function processGame() {
             this.y = Math.random() * this.game.height;
             this.width = 100;
             this.height = 100;
-
+            this.image = undefined;
             this.markForDeletion = false;
 
         }
@@ -56,7 +63,9 @@ function processGame() {
 
         }
         draw() {
-            // interface
+            if (this.image != undefined) {
+                this.game.ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+            }
         }
     }
 
@@ -64,11 +73,12 @@ function processGame() {
     class Nightmare extends Enemy {
         constructor(game) {
             // run constructor from parent class
-            super(game);
+            super(game);            
             // in child class super must be called before this
             
-
+            // any elements in the dom with id automatically added in js
             this.image = nightmare;
+            console.log(this.image);
         }
     }    
 
