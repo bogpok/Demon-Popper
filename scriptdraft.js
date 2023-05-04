@@ -6,7 +6,7 @@ function processGame() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    ctx.fillRect(0,0,500,500)
+    
     
 
     class Game {
@@ -17,35 +17,35 @@ function processGame() {
             this.height = height;
 
             // entities in a game
-            this.enemies = [];
-            this.enemyinterval = 400;
-            this.enemyTimer = 0;
-
+            this.entities = [];
+            this.entityInterval = 400;
+            this.entityTimer = 0;
+            
 
         }
         update(dt) {
             // update entire game
 
-            this.enemies = this.enemies.filter(object=>!object.markForDeletion);
-            if (this.enemyTimer > this.enemyinterval) {
+            this.entities = this.entities.filter(object=>!object.markForDeletion);
+            if (this.entityTimer > this.entityInterval) {
                 this.#addNewEntity();
-                this.enemyTimer = 0;
+                this.entityTimer = 0;
             } else {
-                this.enemyTimer += dt;
+                this.entityTimer += dt;
             }
             
-            this.enemies.forEach(obj=>obj.update(dt));
+            this.entities.forEach(obj=>obj.update(dt));
         }
         draw() {
-            this.enemies.forEach(obj=>obj.draw());
+            this.entities.forEach(obj=>obj.draw());
 
         }
         // private method
         // call only within class
         #addNewEntity() {
-            this.enemies.push(new Nightmare(this));
+            this.entities.push(new Nightmare(this));
             // entities with lower y will be in front
-            this.sort((a,b)=> a.y - b.y);
+            this.entities.sort((a,b)=> a.y - b.y);
         }
     }
 
@@ -78,7 +78,7 @@ function processGame() {
             amount: for each state [number of frames]
             states: number of rows
             */
-            console.log(this.spritesheet);
+            
             if (spritesheet == undefined) {
                 this.spritesheet = {
                     width: 0,
@@ -89,7 +89,7 @@ function processGame() {
             } else {
                 this.spritesheet = spritesheet;
             };
-            console.log(this.spritesheet);
+            
 
             this.setFrameProps();
 
@@ -104,6 +104,17 @@ function processGame() {
 
             this.x-= this.vx*dt;
             if (this.x <- this.width) this.markForDeletion = true;
+
+            this.frame.elapsed += dt;
+            
+            // every <this.frame.speed> ms change frame
+            if (this.frame.elapsed > this.frame.speed){                
+                this.frame.current++;                
+                this.frame.current = this.frame.current % this.spritesheet.amount[this.frame.currentState];
+                this.frame.elapsed = 0;
+            } 
+
+            
 
         }
         draw() {
@@ -122,7 +133,8 @@ function processGame() {
                 height: this.spritesheet.height / this.spritesheet.states,
                 current: 0,
                 currentState: 0,
-                speed: 10,
+                speed: 100,
+                elapsed: 0,
             };
 
             this.scale = 1;
@@ -142,7 +154,7 @@ function processGame() {
                 {
                     width: 576,
                     height: 96,
-                    amount: [1],
+                    amount: [4],
                     states: 1,
                 }
                 );
@@ -154,7 +166,11 @@ function processGame() {
             
         }
         draw() {
-            
+            /* console.log(this.image, 
+                this.frame.current*this.frame.width, 
+                this.frame.currentState*this.frame.height,
+                this.frame.width, this.frame.height,
+                this.x, this.y, this.width, this.height); */
             // animation method
             this.game.ctx.drawImage(this.image, 
                 this.frame.current*this.frame.width, 
