@@ -37,8 +37,7 @@ function getRGBString (array) {
 
 
 class Layer {    
-    constructor(imgSrc, widthOrig, heightOrig, width = 0, height = 0, k = 1) {
-        
+    constructor(imgSrc, widthOrig, heightOrig, width = 0, height = 0, k = 1) {        
         this.img = new Image();
         this.img.src = imgSrc;
         this.widthOrig = widthOrig;
