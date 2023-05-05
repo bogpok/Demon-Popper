@@ -166,6 +166,25 @@ function processGame() {
 
     class Npc extends Entity {
         // - moving objects, like enemies
+
+        constructor(game, spritesheet){
+            super(game, spritesheet);
+
+            // === MOVEMENT SETTINGS ===
+
+            // for sin movement
+            this.angular = {
+                ang: 0,
+                speed: Math.random() * 1 + 0.5,
+                r: Math.random() * 200
+            }; 
+            // for random movement
+            this.newX = Math.random() * (canvas.width - this.width);
+            this.newY = Math.random() * (canvas.height - this.height);
+            this.changePosRate = Math.floor(Math.random() * 40 + 20);
+
+
+        }
         draw() {
             
             // animation method
@@ -174,6 +193,108 @@ function processGame() {
                 this.frame.currentState*this.frame.height,
                 this.frame.width, this.frame.height,
                 this.x, this.y, this.width, this.height);        
+        }
+        update(dt) {
+            //super.update(dt);
+            this.move(dt, 'linearSin');
+
+        }
+        move(dt, pattern='') {
+            // === MOVING PATTERNS ===
+            /** pattern: string */
+    
+            let dx = 0;
+            let dy = 0;
+    
+            switch(pattern) {
+                case "hang":
+                    // hang around
+                    this.x += Math.random() * 5 - 2.5;
+                    this.y += Math.random() * 5 - 2.5;
+                    break;
+                case "linear1":
+                    // linear 1 axis
+                    // moves by the x axis and no changes by y
+                    this.x+=this.vx;
+                    break;
+                case "linearSin":
+                    // linear 1 axis
+                    // moves by the x axis and as sin by y                
+                    this.x+=this.vx;   
+                    this.y+=Math.sin(this.angular.ang)*this.angular.r;
+                    this.angular.ang += this.angular.speed;                
+                    break;
+                case "xSin":
+                    // sin by x, no changes by y
+                    // floating like
+                    this.x = this.angular.r * Math.sin(this.angular.ang * Math.PI/180) + canvas.width/2 - this.width/2;
+                    this.angular.ang += this.angular.speed;
+                    break;
+                case "circular":
+                    // circular
+                    this.x = this.angular.r * Math.sin(this.angular.ang * Math.PI/180) + canvas.width/2 - this.width/2;
+                    this.y = this.angular.r * Math.cos(this.angular.ang * Math.PI/180) + canvas.height/2 - this.height/2;
+                    this.angular.ang += this.angular.speed;
+                    break;
+                case "fillElliptic":
+                    // fill canvas elliptic
+                    this.x0 = canvas.width/2 - this.width/2;
+                    this.y0 = canvas.height/2 - this.height/2;
+                    this.x = this.x0 * Math.sin(this.angular.ang * Math.PI/180) + this.x0;
+                    this.y = this.y0 * Math.cos(this.angular.ang * Math.PI/180) + this.y0;
+                    this.angular.ang += this.angular.speed;
+                    break;
+                case "fillOutPhase":
+                    // fill canvas Spiral
+                    this.x0 = canvas.width/2 - this.width/2;
+                    this.y0 = canvas.height/2 - this.height/2;
+                    // phase coefficients - change pattern
+                    this.angular.sinK = 1/2;
+                    this.angular.cosK = 1.5;
+    
+                    this.x = this.x0 * Math.sin(this.angular.ang * Math.PI/180 * this.angular.sinK) + this.x0;
+                    this.y = this.y0 * Math.cos(this.angular.ang * Math.PI/180 * this.angular.cosK) + this.y0;
+                    this.angular.ang += this.angular.speed;
+                    break;
+    
+                case "randPos":
+                    // random position
+                    if (dt % this.changePosRate == 0) {
+                        this.newX = Math.random() * (canvas.width - this.width);
+                        this.newY = Math.random() * (canvas.height - this.height);
+                    }
+                    dx = this.x - this.newX;
+                    dy = this.y - this.newY;
+                    this.x -= dx/this.changePosRate;
+                    this.y -= dy/this.changePosRate;
+                    break;
+    
+                case "onmouse":
+                    // follow the mouse
+    
+                    const onMouseMove = (e) => {                    
+                        this.newX = e.clientX - this.canvasPos.x - this.width/2;
+                        this.newY = e.clientY - this.canvasPos.y - this.height/2;                    
+                    }
+                    dx = (this.x - this.newX);
+                    dy = (this.y - this.newY);
+                    this.x -= dx/this.changePosRate;
+                    this.y -= dy/this.changePosRate;
+                    /*
+                    dx = (this.x - this.newX);
+                    dy = (this.y - this.newY);
+                    this.x -= dx/this.changePosRate;
+                    this.y -= dy/this.changePosRate;
+                    */
+    
+                    //document.addEventListener('mousemove', onMouseMove, false);
+                    break;
+    
+                default:
+                    this.x+=this.vx;
+                    this.y+=this.vx;
+            }            
+            //if (this.x + this.width < 0) this.x = canvas.width;
         }
     }
 
@@ -197,8 +318,15 @@ function processGame() {
             // rescale
             this.setFrameProps(2);
 
-            this.vx = Math.random() * 0.1 + .2;            
+            this.vx = Math.random() * 0.1 + .2;  
+            this.y = this.game.height - this.height - 20;            
         }        
+        draw() {
+            this.game.ctx.save() // snapshot of all canvas settings
+            this.game.ctx.globalAlpha = Math.random() * 0.1 + 0.8;
+            super.draw();
+            this.game.ctx.restore(); // return all snapshot settings
+        }   
     }
     
     class Demon extends Npc {
@@ -220,9 +348,17 @@ function processGame() {
             // rescale
             this.setFrameProps(Math.random() * 1 + 1);
 
-            this.vx = Math.random() * 0.1 + .2;            
+            this.vx = Math.random() * 0.1 + .2;      
+            this.y = Math.random()*this.game.height * 0.6;  
+                
+        }
+        draw() {
+            this.game.ctx.save() // snapshot of all canvas settings
+            this.game.ctx.globalAlpha = Math.random() * 0.05 + 0.95;
+            super.draw();
+            this.game.ctx.restore(); // return all snapshot settings
         }        
-    } 
+    }   
 
     class Bird extends Npc {
         constructor(game) {            
