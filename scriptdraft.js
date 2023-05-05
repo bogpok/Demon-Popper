@@ -20,6 +20,11 @@ function processGame() {
             this.entities = [];
             this.entityInterval = 400;
             this.entityTimer = 0;
+
+            this.enemyTypes = ['nightmare', 'demon'];
+            this.alliesTypes = ['bird']; 
+            this.entityTypes = [...this.enemyTypes, ...this.alliesTypes];
+
             
 
         }
@@ -43,7 +48,22 @@ function processGame() {
         // private method
         // call only within class
         #addNewEntity() {
-            this.entities.push(new Nightmare(this));
+            const randEntity = this.entityTypes[
+                Math.floor(Math.random()*this.entityTypes.length)
+            ];
+
+            switch (randEntity) {
+                case 'nightmare':
+                    this.entities.push(new Nightmare(this));
+                    break;
+                case 'demon':
+                    this.entities.push(new Demon(this));
+                    break;
+                case 'bird':
+                    this.entities.push(new Bird(this));
+                    break;
+            }
+            
             // entities with lower y will be in front
             this.entities.sort((a,b)=> a.y - b.y);
         }
@@ -76,7 +96,7 @@ function processGame() {
             width: original width
             height: original height
             amount: for each state [number of frames]
-            states: number of rows
+                amount.length - states - number of rows
             */
             
             if (spritesheet == undefined) {
@@ -84,7 +104,7 @@ function processGame() {
                     width: 0,
                     height: 0,
                     amount: [1],
-                    states: 1,
+                    
                 };
             } else {
                 this.spritesheet = spritesheet;
@@ -126,26 +146,39 @@ function processGame() {
             // Filtering
             this.markForDeletion = false;
         }
-        setFrameProps() {
+        setFrameProps(scale = 1, speed = {min:80, max:120}) {
             // after initializing spritesheet ONLY
             this.frame = {
-                width: this.spritesheet.width / this.spritesheet.amount[0],
-                height: this.spritesheet.height / this.spritesheet.states,
+                width: this.spritesheet.width / Math.max(...this.spritesheet.amount),
+                height: this.spritesheet.height / this.spritesheet.amount.length,
                 current: 0,
                 currentState: 0,
-                speed: 100,
+                speed: Math.random()*(speed.max-speed.min) + speed.min,
                 elapsed: 0,
             };
 
-            this.scale = 1;
+            this.scale = scale;
             this.width = this.frame.width*this.scale;
             this.height = this.frame.height*this.scale;
         }
         
     }
 
+    class Npc extends Entity {
+        // - moving objects, like enemies
+        draw() {
+            
+            // animation method
+            this.game.ctx.drawImage(this.image, 
+                this.frame.current*this.frame.width, 
+                this.frame.currentState*this.frame.height,
+                this.frame.width, this.frame.height,
+                this.x, this.y, this.width, this.height);        
+        }
+    }
 
-    class Nightmare extends Entity {
+
+    class Nightmare extends Npc {
         constructor(game) {            
             // run constructor from parent class
             // in child class 'super' must be called before 'this'
@@ -154,32 +187,76 @@ function processGame() {
                 {
                     width: 576,
                     height: 96,
-                    amount: [4],
-                    states: 1,
+                    amount: [4],                    
                 }
                 );
                         
             // any elements in the dom with id automatically added in js
             this.image = nightmare;
 
-            this.vx = Math.random() * 0.1 + .2;
-            
-        }
-        draw() {
-            /* console.log(this.image, 
-                this.frame.current*this.frame.width, 
-                this.frame.currentState*this.frame.height,
-                this.frame.width, this.frame.height,
-                this.x, this.y, this.width, this.height); */
-            // animation method
-            this.game.ctx.drawImage(this.image, 
-                this.frame.current*this.frame.width, 
-                this.frame.currentState*this.frame.height,
-                this.frame.width, this.frame.height,
-                this.x, this.y, this.width, this.height);        
-        }
-    }   
+            // rescale
+            this.setFrameProps(2);
 
+            this.vx = Math.random() * 0.1 + .2;            
+        }        
+    }
+    
+    class Demon extends Npc {
+        constructor(game) {            
+            // run constructor from parent class
+            // in child class 'super' must be called before 'this'
+            super(
+                game,
+                {
+                    width: 960,
+                    height: 144,
+                    amount: [6],                    
+                }
+                );
+                        
+            // any elements in the dom with id automatically added in js
+            this.image = demon;
+
+            // rescale
+            this.setFrameProps(Math.random() * 1 + 1);
+
+            this.vx = Math.random() * 0.1 + .2;            
+        }        
+    } 
+
+    class Bird extends Npc {
+        constructor(game) {            
+            // run constructor from parent class
+            // in child class 'super' must be called before 'this'
+            super(
+                game,
+                {
+                    width: 1312,
+                    height: 480,
+                    amount: [2,8,3],                    
+                }
+                );
+                        
+            // any elements in the dom with id automatically added in js
+            this.image = bird;
+
+            // rescale
+            this.setFrameProps(0.5);
+
+            this.frame.height += 1;            
+            this.frame.currentState = 1;
+
+            this.vx = Math.random() * 0.1 + .2;   
+            
+            
+            //console.log(this)
+        }        
+    } 
+
+    /* TODO 
+    Demon - common enemy - 1 point
+    Nightmare - rare enemy - 5 points
+    Bird - dont touch, minus 3 points */
 
     const game = new Game(ctx, canvas.width, canvas.height);
     
