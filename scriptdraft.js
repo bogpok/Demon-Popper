@@ -122,8 +122,7 @@ function processGame() {
         update(dt) {
             // update each individual object
 
-            this.x-= this.vx*dt;
-            if (this.x <- this.width) this.markForDeletion = true;
+            
 
             this.frame.elapsed += dt;
             
@@ -133,10 +132,14 @@ function processGame() {
                 this.frame.current = this.frame.current % this.spritesheet.amount[this.frame.currentState];
                 this.frame.elapsed = 0;
             } 
-
-            
-
         }
+        move(dt) {
+            this.x-= this.vx*dt;
+            // !!!
+            if (this.x <- this.width) this.markForDeletion = true;
+        }
+
+        
         draw() {
             if (this.image != undefined) {
                 this.game.ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
@@ -175,8 +178,8 @@ function processGame() {
             // for sin movement
             this.angular = {
                 ang: 0,
-                speed: Math.random() * 1 + 0.5,
-                r: Math.random() * 200
+                speed: Math.random() * 0.001 + 0.001,
+                r: Math.random() * 20
             }; 
             // for random movement
             this.newX = Math.random() * (canvas.width - this.width);
@@ -195,7 +198,7 @@ function processGame() {
                 this.x, this.y, this.width, this.height);        
         }
         update(dt) {
-            //super.update(dt);
+            super.update(dt);
             this.move(dt, 'linearSin');
 
         }
@@ -205,6 +208,9 @@ function processGame() {
     
             let dx = 0;
             let dy = 0;
+
+            // TODO
+            // all patterns should be verified
     
             switch(pattern) {
                 case "hang":
@@ -215,26 +221,26 @@ function processGame() {
                 case "linear1":
                     // linear 1 axis
                     // moves by the x axis and no changes by y
-                    this.x+=this.vx;
+                    this.x-=this.vx*dt;
                     break;
                 case "linearSin":
                     // linear 1 axis
                     // moves by the x axis and as sin by y                
-                    this.x+=this.vx;   
-                    this.y+=Math.sin(this.angular.ang)*this.angular.r;
-                    this.angular.ang += this.angular.speed;                
+                    this.x-=this.vx*dt;   
+                    this.y-=Math.sin(this.angular.ang)*this.angular.r;
+                    this.angular.ang += this.angular.speed*dt;                
                     break;
                 case "xSin":
                     // sin by x, no changes by y
                     // floating like
                     this.x = this.angular.r * Math.sin(this.angular.ang * Math.PI/180) + canvas.width/2 - this.width/2;
-                    this.angular.ang += this.angular.speed;
+                    this.angular.ang += this.angular.speed*dt;
                     break;
                 case "circular":
                     // circular
                     this.x = this.angular.r * Math.sin(this.angular.ang * Math.PI/180) + canvas.width/2 - this.width/2;
                     this.y = this.angular.r * Math.cos(this.angular.ang * Math.PI/180) + canvas.height/2 - this.height/2;
-                    this.angular.ang += this.angular.speed;
+                    this.angular.ang += this.angular.speed*dt;
                     break;
                 case "fillElliptic":
                     // fill canvas elliptic
@@ -242,7 +248,7 @@ function processGame() {
                     this.y0 = canvas.height/2 - this.height/2;
                     this.x = this.x0 * Math.sin(this.angular.ang * Math.PI/180) + this.x0;
                     this.y = this.y0 * Math.cos(this.angular.ang * Math.PI/180) + this.y0;
-                    this.angular.ang += this.angular.speed;
+                    this.angular.ang += this.angular.speed*dt;
                     break;
                 case "fillOutPhase":
                     // fill canvas Spiral
@@ -254,7 +260,7 @@ function processGame() {
     
                     this.x = this.x0 * Math.sin(this.angular.ang * Math.PI/180 * this.angular.sinK) + this.x0;
                     this.y = this.y0 * Math.cos(this.angular.ang * Math.PI/180 * this.angular.cosK) + this.y0;
-                    this.angular.ang += this.angular.speed;
+                    this.angular.ang += this.angular.speed*dt;
                     break;
     
                 case "randPos":
@@ -291,8 +297,8 @@ function processGame() {
                     break;
     
                 default:
-                    this.x+=this.vx;
-                    this.y+=this.vx;
+                    this.x-=this.vx*dt;
+                    this.y-=this.vx*dt;
             }            
             //if (this.x + this.width < 0) this.x = canvas.width;
         }
