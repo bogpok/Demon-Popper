@@ -63,8 +63,8 @@ function processGame() {
         update(dt) {
             // === update entire game ===
             
-            // only contain items where object.markedForDeletion = false
-            this.entities = this.entities.filter(object=>!object.markForDeletion);
+            // only contain items where object.deleteMarker = false
+            this.entities = this.entities.filter(object=>!object.deleteMarker);
             
             // === periodic creations ===
             if (this.entityTimer > this.entityInterval) {
@@ -77,8 +77,7 @@ function processGame() {
             this.entities.forEach(obj=>obj.update(dt));
 
             explosions.forEach(object => object.update());
-            explosions = explosions.filter(object => !object.markedForDeletion);
-            console.log(explosions)
+            explosions = explosions.filter(object => !object.deleteMarker);         
             
             
             
@@ -279,7 +278,7 @@ function processGame() {
         move(dt) {
             this.x-= this.vx*dt;
             // !!!
-            if (this.x <- this.width) this.markForDeletion = true;
+            if (this.x <- this.width) this.deleteMarker = true;
         }        
         draw() {
             if (this.image != undefined) {
@@ -288,7 +287,7 @@ function processGame() {
         }
         setDefaults() {
             // Filtering
-            this.markForDeletion = false;
+            this.deleteMarker = false;
         }
         setFrameProps(scale = 1, speed = {min:80, max:120}) {
             // after initializing spritesheet ONLY
@@ -339,7 +338,7 @@ function processGame() {
         }
         update(dt) {
             super.update(dt);
-            this.move(dt, 'linearSin');
+            this.move(dt, 'linear1');
 
         }
         move(dt, pattern='') {
@@ -517,9 +516,10 @@ function processGame() {
             this.vx = Math.random() * 0.1 + .2;      
             this.y = Math.random()*this.game.height * 0.6;  
 
-            this.color = {};
-            this.color.a = [Math.floor(Math.random()*255), Math.floor(Math.random()*255), Math.floor(Math.random()*255)];
-            this.color.string = getRGBString(this.color.a);
+            this.hitbox = {
+                carr: [Math.floor(Math.random()*255), Math.floor(Math.random()*255), Math.floor(Math.random()*255)],                
+            };            
+            this.hitbox.cstring = getRGBString(this.hitbox.carr);
             
         }
 
@@ -535,7 +535,7 @@ function processGame() {
                     this.x = canvas.width;
             } else {
                 // delete items passed the screen
-                if (this.x < -this.width) this.markedForDeletion = true;
+                if (this.x < -this.width) this.deleteMarker = true;
             } 
 
             // === HANDLE Y ===
@@ -554,23 +554,13 @@ function processGame() {
             super.draw();
             this.game.ctx.restore(); // return all snapshot settings
 
-            collisionCtx.fillStyle = this.color.string;
+            collisionCtx.fillStyle = this.hitbox.cstring;
             collisionCtx.fillRect(this.x, this.y, this.width, this.height);
 
         }   
 
         
     }
-
-    let demons = [];
-    const demonsN = 0; //starter
-    for (let i=0; i < demonsN; i++) {
-        demons.push(new Demon);
-    }
-
-
-    
-    
 
 
     class Explosion {
@@ -596,13 +586,13 @@ function processGame() {
             this.sound.src = clinkSNDSrc;
             this.sound.volume = Math.random()*0.08 + 0.03;
 
-            this.markedForDeletion = false;
+            this.deleteMarker = false;
 
         }
         update(){
             this.timer++;
             this.timer % 5 == 0 ? this.frame++ : 'else';
-            if (this.frame > this.frameN) this.markedForDeletion = true;
+            if (this.frame > this.frameN) this.deleteMarker = true;
         }
         draw(){
             this.sound.play();
@@ -614,16 +604,18 @@ function processGame() {
 
     function drawScore() {
         ctx.font = '30px impact';
+
+        let x = - 150;
         // draw text 2 times to create shadow effect
         ctx.fillStyle = 'black';
         ctx.fillText(
             'Score: ' + score,
-            canvas.width - 100, 
+            canvas.width + x, 
             30)
         ctx.fillStyle = 'white';
         ctx.fillText(
             'Score: ' + score,
-            canvas.width - 96, 
+            canvas.width + (x+5), 
             33)
     }
     
@@ -635,15 +627,18 @@ function processGame() {
         // collisions detection by color
         const detectPixelColor = collisionCtx.getImageData(posX, posY, 1, 1)    
         const pixel_color = detectPixelColor.data;    
-        demons.forEach(obj => {
-            if (obj.color.string === getRGBString(pixel_color)){
-                obj.markedForDeletion = true;            
-                score++;
-            }        
+        
+        game.entities.forEach(obj => {
+            // if it has hitbox property
+            if (obj.hitbox) {
+                if (obj.hitbox.cstring === getRGBString(pixel_color)){
+                    obj.deleteMarker = true;     
+                    score++;
+                }   
+            }                 
         });
 
-        explosions.push(new Explosion(posX, posY)); 
-        console.log('NEW explosion')   
+        explosions.push(new Explosion(posX, posY));         
     }
 
     function drawGameOver() {
@@ -696,7 +691,12 @@ function processGame() {
 
 /* TODO 
 
-# !!! Hit regions are not working
+# extend hit regions for all NPCs
+# hit scores
+
+    Demon - common enemy - 1 point
+    Nightmare - rare enemy - 5 points
+    Bird - dont touch, minus 3 points 
 
 # !!! Check if entities are deleted from array
 
@@ -704,13 +704,9 @@ function processGame() {
 # Npc.move()
     all patterns should be verified
 
-# hit scores
 
-    Demon - common enemy - 1 point
-    Nightmare - rare enemy - 5 points
-    Bird - dont touch, minus 3 points 
     
-# Add EXPLOSIONS to entities?
+# Refactor bgs and EXPLOSIONS
 
 # still need gameFrame?
     
