@@ -685,29 +685,3 @@ function processGame() {
     animate(0);
 
 }
-
-
-// === User stories ===
-
-/* TODO 
-
-# extend hit regions for all NPCs
-# hit scores
-
-    Demon - common enemy - 1 point
-    Nightmare - rare enemy - 5 points
-    Bird - dont touch, minus 3 points 
-
-# !!! Check if entities are deleted from array
-
-
-# Npc.move()
-    all patterns should be verified
-
-
-    
-# Refactor bgs and EXPLOSIONS
-
-# still need gameFrame?
-    
-*/
