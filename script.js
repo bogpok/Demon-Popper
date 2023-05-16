@@ -57,12 +57,76 @@ function processGame() {
             Cons:
                 - methods should be identical
             */
-            this.entityTypes = [...this.enemyTypes, ...this.alliesTypes];      
+            this.entityTypes = [...this.enemyTypes, ...this.alliesTypes, ];    
 
+        }
+        update(dt) {
+            // === update entire game ===
+            
+            // only contain items where object.markedForDeletion = false
+            this.entities = this.entities.filter(object=>!object.markForDeletion);
+            
+            // === periodic creations ===
+            if (this.entityTimer > this.entityInterval) {
+                this.#addNewEntity();
+                this.entityTimer = 0;
+            } else {
+                this.entityTimer += dt;
+            }
+            
+            this.entities.forEach(obj=>obj.update(dt));
+
+            explosions.forEach(object => object.update());
+            explosions = explosions.filter(object => !object.markedForDeletion);
+            console.log(explosions)
+            
+            
+            
+        }
+        draw() {
+            // === draw BG first ===
+
+            for (let i = 0; i < bgLayers.length; i++){
+                bgLayers[i].advanceImage();
+            }
+
+            // === draw entities ===
+            this.entities.forEach(obj=>obj.draw());
+
+            explosions.forEach(object => object.draw());
+
+            // === draw score ===
+            drawScore();
+
+        }
+        // private methods (call only within class)
+        #addNewEntity() {
+            const randEntity = this.entityTypes[
+                Math.floor(Math.random()*this.entityTypes.length)
+            ];
+
+            switch (randEntity) {
+                case 'nightmare':
+                    this.entities.push(new Nightmare(this));
+                    break;
+                case 'demon':
+                    this.entities.push(new Demon(this));
+                    break;
+                case 'bird':
+                    this.entities.push(new Bird(this));
+                    break;
+            }
+            
+            // entities with lower y will be in front
+            this.entities.sort((a,b)=> a.y - b.y);
+
+            /* demons.sort((a, b)=>{
+                return a.scale - b.scale;
+            }) */
         }
     }
 
-    class Layer {    
+    class bgLayer {    
         constructor(imgSrc, widthOrig, heightOrig, width = 0, height = 0, k = 1) {        
             this.img = new Image();
             this.img.src = imgSrc;
@@ -138,7 +202,7 @@ function processGame() {
 
     const bgLayers = backgrounds.map((bg) => {
         
-        return new Layer(
+        return new bgLayer(
             bg.url, 
             widthOrig = bg.width, 
             heightOrig = bg.height, 
@@ -150,98 +214,352 @@ function processGame() {
     );
 
 
+    class Entity {
 
-    class Demon {
-        constructor() {
-            this.img = new Image();
-            this.img.src = demonSrc;
+        // abstract
 
-            this.widthOrig = 960;
-            this.heightOrig = 144;
+        /*
+        Types:
+            - scrolling images (like backgrounds)
+            - moving objects, like enemies
+            - controllable objects, like hero
+        */
 
-            this.framesN = 6;
-            this.frameWidth = this.widthOrig/this.framesN;
-            this.frameHeight = this.heightOrig;
-            this.frame = 0;
-            this.frameSpeed = 10;
+        constructor(game, spritesheet = undefined){
+            // Game object
+            this.game = game;
 
-            this.scale = 5*(Math.random()*1.5+0.75)*this.frameHeight / canvas.height;
-            this.width = this.frameWidth*this.scale;
-            this.height = this.frameHeight*this.scale;
+            // Image object from document
+            this.image = undefined;
 
-            this.x = canvas.width;
-            this.y = Math.random() * (canvas.height - this.height);
+            // Common values
+            this.setDefaults();
 
-            this.directionX = Math.random() * 3 + 1;
-            this.directionY = Math.random() * 6 - 4;
+            /* Spritesheet image properties
+            Spritesheet must represent several frames horizontally for each state
+            
+            width: original width
+            height: original height
+            amount: for each state [number of frames]
+                amount.length - states - number of rows
+            */
+            
+            if (spritesheet == undefined) {
+                this.spritesheet = {
+                    width: 0,
+                    height: 0,
+                    amount: [1],
+                    
+                };
+            } else {
+                this.spritesheet = spritesheet;
+            };
+            
 
-            this.markedForDeletion = false;
+            this.setFrameProps();
 
-            // if we want animation speed to be relative to timestamp
-            this.flap = {            
-                interval: 100,         
-                timeSince: 0,
+            // Positioning
+            this.x = this.game.width;
+            this.y = Math.random() * (this.game.height - this.height);
+            
+
+        }
+        update(dt) {
+            // update each individual object           
+
+            this.frame.elapsed += dt;
+            
+            // every <this.frame.speed> ms change frame
+            if (this.frame.elapsed > this.frame.speed){                
+                this.frame.current++;                
+                this.frame.current = this.frame.current % this.spritesheet.amount[this.frame.currentState];
+                this.frame.elapsed = 0;
+            } 
+        }
+        move(dt) {
+            this.x-= this.vx*dt;
+            // !!!
+            if (this.x <- this.width) this.markForDeletion = true;
+        }        
+        draw() {
+            if (this.image != undefined) {
+                this.game.ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
             }
+        }
+        setDefaults() {
+            // Filtering
+            this.markForDeletion = false;
+        }
+        setFrameProps(scale = 1, speed = {min:80, max:120}) {
+            // after initializing spritesheet ONLY
+            this.frame = {
+                width: this.spritesheet.width / Math.max(...this.spritesheet.amount),
+                height: this.spritesheet.height / this.spritesheet.amount.length,
+                current: 0,
+                currentState: 0,
+                speed: Math.random()*(speed.max-speed.min) + speed.min,
+                elapsed: 0,
+            };
+
+            this.scale = scale;
+            this.width = this.frame.width*this.scale;
+            this.height = this.frame.height*this.scale;
+        }
+        
+    }
+
+    class Npc extends Entity {
+        // - moving objects, like enemies
+        constructor(game, spritesheet){
+            super(game, spritesheet);
+
+            // === MOVEMENT SETTINGS ===
+
+            // for sin movement
+            this.angular = {
+                ang: 0,
+                speed: Math.random() * 0.001 + 0.001,
+                r: Math.random() * 20
+            }; 
+            // for random movement
+            this.newX = Math.random() * (canvas.width - this.width);
+            this.newY = Math.random() * (canvas.height - this.height);
+            this.changePosRate = Math.floor(Math.random() * 40 + 20);
+
+
+        }
+        draw() {
+            
+            // animation method
+            this.game.ctx.drawImage(this.image, 
+                this.frame.current*this.frame.width, 
+                this.frame.currentState*this.frame.height,
+                this.frame.width, this.frame.height,
+                this.x, this.y, this.width, this.height);        
+        }
+        update(dt) {
+            super.update(dt);
+            this.move(dt, 'linearSin');
+
+        }
+        move(dt, pattern='') {
+            // === MOVING PATTERNS ===
+            /** pattern: string */
+    
+            let dx = 0;
+            let dy = 0;            
+    
+            switch(pattern) {
+                case "hang":
+                    // hang around
+                    this.x += Math.random() * 5 - 2.5;
+                    this.y += Math.random() * 5 - 2.5;
+                    break;
+                case "linear1":
+                    // linear 1 axis
+                    // moves by the x axis and no changes by y
+                    this.x-=this.vx*dt;
+                    break;
+                case "linearSin":
+                    // linear 1 axis
+                    // moves by the x axis and as sin by y                
+                    this.x-=this.vx*dt;   
+                    this.y-=Math.sin(this.angular.ang)*this.angular.r;
+                    this.angular.ang += this.angular.speed*dt;                
+                    break;
+                case "xSin":
+                    // sin by x, no changes by y
+                    // floating like
+                    this.x = this.angular.r * Math.sin(this.angular.ang * Math.PI/180) + canvas.width/2 - this.width/2;
+                    this.angular.ang += this.angular.speed*dt;
+                    break;
+                case "circular":
+                    // circular
+                    this.x = this.angular.r * Math.sin(this.angular.ang * Math.PI/180) + canvas.width/2 - this.width/2;
+                    this.y = this.angular.r * Math.cos(this.angular.ang * Math.PI/180) + canvas.height/2 - this.height/2;
+                    this.angular.ang += this.angular.speed*dt;
+                    break;
+                case "fillElliptic":
+                    // fill canvas elliptic
+                    this.x0 = canvas.width/2 - this.width/2;
+                    this.y0 = canvas.height/2 - this.height/2;
+                    this.x = this.x0 * Math.sin(this.angular.ang * Math.PI/180) + this.x0;
+                    this.y = this.y0 * Math.cos(this.angular.ang * Math.PI/180) + this.y0;
+                    this.angular.ang += this.angular.speed*dt;
+                    break;
+                case "fillOutPhase":
+                    // fill canvas Spiral
+                    this.x0 = canvas.width/2 - this.width/2;
+                    this.y0 = canvas.height/2 - this.height/2;
+                    // phase coefficients - change pattern
+                    this.angular.sinK = 1/2;
+                    this.angular.cosK = 1.5;
+    
+                    this.x = this.x0 * Math.sin(this.angular.ang * Math.PI/180 * this.angular.sinK) + this.x0;
+                    this.y = this.y0 * Math.cos(this.angular.ang * Math.PI/180 * this.angular.cosK) + this.y0;
+                    this.angular.ang += this.angular.speed*dt;
+                    break;
+    
+                case "randPos":
+                    // random position
+                    if (dt % this.changePosRate == 0) {
+                        this.newX = Math.random() * (canvas.width - this.width);
+                        this.newY = Math.random() * (canvas.height - this.height);
+                    }
+                    dx = this.x - this.newX;
+                    dy = this.y - this.newY;
+                    this.x -= dx/this.changePosRate;
+                    this.y -= dy/this.changePosRate;
+                    break;
+    
+                case "onmouse":
+                    // follow the mouse
+    
+                    const onMouseMove = (e) => {                    
+                        this.newX = e.clientX - this.canvasPos.x - this.width/2;
+                        this.newY = e.clientY - this.canvasPos.y - this.height/2;                    
+                    }
+                    dx = (this.x - this.newX);
+                    dy = (this.y - this.newY);
+                    this.x -= dx/this.changePosRate;
+                    this.y -= dy/this.changePosRate;
+                    /*
+                    dx = (this.x - this.newX);
+                    dy = (this.y - this.newY);
+                    this.x -= dx/this.changePosRate;
+                    this.y -= dy/this.changePosRate;
+                    */
+    
+                    //document.addEventListener('mousemove', onMouseMove, false);
+                    break;
+    
+                default:
+                    this.x-=this.vx*dt;
+                    this.y-=this.vx*dt;
+            }            
+            //if (this.x + this.width < 0) this.x = canvas.width;
+        }
+    }
+
+
+    class Nightmare extends Npc {
+        constructor(game) {         
+            
+            super(
+                game,
+                {
+                    width: 576,
+                    height: 96,
+                    amount: [4],                    
+                }
+                );
+                        
+            // any elements in the dom with id automatically added in js
+            this.image = nightmare;
+
+            // rescale
+            this.setFrameProps(2);
+
+            this.vx = Math.random() * 0.1 + .2;  
+            this.y = this.game.height - this.height - 20;            
+        }        
+        draw() {
+            this.game.ctx.save() // snapshot of all canvas settings
+            // transparency
+            this.game.ctx.globalAlpha = Math.random() * 0.1 + 0.8;
+            super.draw();
+            this.game.ctx.restore(); // return all snapshot settings
+        }   
+    }
+    
+    class Bird extends Npc {
+        // Simple flying object which the player should not hit
+        constructor(game) {            
+            super(
+                game,
+                {
+                    width: 1312,
+                    height: 480,
+                    amount: [2,8,3],                    
+                }
+                );
+                        
+            // any elements in the dom with id automatically added in js
+            this.image = bird;
+
+            // rescale
+            this.setFrameProps(0.5);
+
+            this.frame.height += 1;            
+            this.frame.currentState = 1;
+
+            this.vx = Math.random() * 0.1 + .2;               
+        }        
+    } 
+
+
+    class Demon extends Npc {
+        constructor(game) {
+            // Flying object, hit for 1 point
+            super(
+                game,
+                {
+                    width: 960,
+                    height: 144,
+                    amount: [6],                    
+                }
+                );
+            this.image = demon;
+
+            // rescale
+            this.setFrameProps(Math.random() * 1 + 1);
+            
+            this.vx = Math.random() * 0.1 + .2;      
+            this.y = Math.random()*this.game.height * 0.6;  
+
             this.color = {};
             this.color.a = [Math.floor(Math.random()*255), Math.floor(Math.random()*255), Math.floor(Math.random()*255)];
             this.color.string = getRGBString(this.color.a);
             
         }
 
-        update() {
+        update(dt) {
+            super.update(dt)
+            /*
             // === HANDLE X ===
             this.x -= this.directionX;
 
-            // Ususal x reset (carousel)
-            /* if (this.x < -canvas.width) {
-                this.x = canvas.width
-            } */
-
-            // delete items passed the screen
-            if (this.x < -this.width) this.markedForDeletion = true;
+            reset = '';
+            if (reset === 'carousel') {
+                if (this.x < -canvas.width) {
+                    this.x = canvas.width;
+            } else {
+                // delete items passed the screen
+                if (this.x < -this.width) this.markedForDeletion = true;
+            } 
 
             // === HANDLE Y ===
             this.y -= this.directionY;
             // bounce
             if (this.y <= 0 || this.y >= canvas.height - this.height) {
                 this.directionY *= -1;            
-            }; 
+            };  */
 
             // GAME OVER
-            if (this.x < 0 - this.width) gameOver = true;
+            if (this.x < - this.width) gameOver = true;
         }
-
-        draw(dt, method = 'time') {       
-            let rel = false;
-
-            switch (method){
-                case 'time':
-                    // time and image frame relation  
-                    // <every ... ms>  
-                    this.flap.timeSince += dt;
-                    rel = this.flap.timeSince > this.flap.interval
-                    
-                    //rel = Math.round(timestamp) % this.flap.interval === 0;
-                    break;
-                default:
-                    // game frame and image frame relation
-                    rel = gameFrame % this.frameSpeed === 0;
-            }
-            
-            if (rel) {
-                this.frame++;
-                this.frame = this.frame % this.framesN;
-
-                this.flap.timeSince = 0
-            }
+        draw() {
+            this.game.ctx.save() // snapshot of all canvas settings
+            this.game.ctx.globalAlpha = Math.random() * 0.05 + 0.95;
+            super.draw();
+            this.game.ctx.restore(); // return all snapshot settings
 
             collisionCtx.fillStyle = this.color.string;
             collisionCtx.fillRect(this.x, this.y, this.width, this.height);
-            ctx.drawImage(this.img, this.frame*this.frameWidth, 0, this.frameWidth, this.frameHeight, this.x, this.y, this.width, this.height)
 
-        }
+        }   
 
-        // delete items passed screen border
+        
     }
 
     let demons = [];
@@ -251,9 +569,8 @@ function processGame() {
     }
 
 
-    let timeToNextEnemy = 0;
-    let enemyinterval = 500; // ms
-    let lastTime = 0;
+    
+    
 
 
     class Explosion {
@@ -285,8 +602,7 @@ function processGame() {
         update(){
             this.timer++;
             this.timer % 5 == 0 ? this.frame++ : 'else';
-            if (this.frame > this.frameN) this.markedForDeletion = true; 
-            
+            if (this.frame > this.frameN) this.markedForDeletion = true;
         }
         draw(){
             this.sound.play();
@@ -326,7 +642,8 @@ function processGame() {
             }        
         });
 
-        explosions.push(new Explosion(posX, posY));    
+        explosions.push(new Explosion(posX, posY)); 
+        console.log('NEW explosion')   
     }
 
     function drawGameOver() {
@@ -342,11 +659,15 @@ function processGame() {
         ctx.fillText(text, canvas.width/2 + 5, canvas.height/2 + 5);
     }
 
-
+    //#region Listeners
     canvas.addEventListener('click', e => onTap (e.x, e.y));
     canvas.addEventListener('touchstart', e => onTap (e.x, e.y));
+    //#endregion
 
+    //#region animate props
+    let lastTime = 0;
     const game = new Game(ctx, canvas.width, canvas.height);
+    //#endregion
 
     function animate(timestamp) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -354,41 +675,10 @@ function processGame() {
 
         // === Calculate time ===
         let dt = timestamp - lastTime;
-        lastTime = timestamp;
-
-        // === draw BG first ===
-
-        for (let i = 0; i < bgLayers.length; i++){
-            bgLayers[i].advanceImage();
-        }
-
-        // === draw score ===
-        drawScore();
-
-        // update entire game
-
-        // only contain items where object.markedForDeletion = false
-        [...demons, ...explosions].filter(object => !object.markedForDeletion); 
-
-        // === draw enemies ===
-        // === periodic creations ===
+        lastTime = timestamp; 
         
-        timeToNextEnemy = timeToNextEnemy + dt;
-        
-        if (timeToNextEnemy > enemyinterval) {
-            demons.push(new Demon());
-            timeToNextEnemy = 0;        
-            demons.sort((a, b)=>{
-                return a.scale - b.scale;
-            })
-        }        
-        
-        
-        [...demons, ...explosions].forEach(object => object.update());
-        [...demons, ...explosions].forEach(object => object.draw(dt));
-                   
-        
-
+        game.update(dt);
+        game.draw();
 
         gameFrame++;
         
@@ -399,13 +689,17 @@ function processGame() {
     // passes first timestamp value 0, otherwise it is undefined
     animate(0);
 
-
 }
 
 
 // === User stories ===
 
 /* TODO 
+
+# !!! Hit regions are not working
+
+# !!! Check if entities are deleted from array
+
 
 # Npc.move()
     all patterns should be verified
@@ -416,6 +710,8 @@ function processGame() {
     Nightmare - rare enemy - 5 points
     Bird - dont touch, minus 3 points 
     
-    
+# Add EXPLOSIONS to entities?
+
+# still need gameFrame?
     
 */
