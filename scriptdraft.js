@@ -4,9 +4,7 @@ function processGame() {
     const canvas = document.getElementById('canvas1');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    
+    canvas.height = window.innerHeight;   
     
 
     class Game {
@@ -23,13 +21,12 @@ function processGame() {
 
             this.enemyTypes = ['nightmare', 'demon'];
             this.alliesTypes = ['bird']; 
-            this.entityTypes = [...this.enemyTypes, ...this.alliesTypes];
-
-            
+            // ... spread operator
+            this.entityTypes = [...this.enemyTypes, ...this.alliesTypes];           
 
         }
         update(dt) {
-            // update entire game
+            
 
             this.entities = this.entities.filter(object=>!object.markForDeletion);
             if (this.entityTimer > this.entityInterval) {
@@ -169,7 +166,6 @@ function processGame() {
 
     class Npc extends Entity {
         // - moving objects, like enemies
-
         constructor(game, spritesheet){
             super(game, spritesheet);
 
@@ -207,10 +203,7 @@ function processGame() {
             /** pattern: string */
     
             let dx = 0;
-            let dy = 0;
-
-            // TODO
-            // all patterns should be verified
+            let dy = 0;            
     
             switch(pattern) {
                 case "hang":
@@ -306,9 +299,8 @@ function processGame() {
 
 
     class Nightmare extends Npc {
-        constructor(game) {            
-            // run constructor from parent class
-            // in child class 'super' must be called before 'this'
+        constructor(game) {         
+            
             super(
                 game,
                 {
@@ -329,6 +321,7 @@ function processGame() {
         }        
         draw() {
             this.game.ctx.save() // snapshot of all canvas settings
+            // transparency
             this.game.ctx.globalAlpha = Math.random() * 0.1 + 0.8;
             super.draw();
             this.game.ctx.restore(); // return all snapshot settings
@@ -337,8 +330,7 @@ function processGame() {
     
     class Demon extends Npc {
         constructor(game) {            
-            // run constructor from parent class
-            // in child class 'super' must be called before 'this'
+            // Flying object, hit for 1 point
             super(
                 game,
                 {
@@ -367,9 +359,8 @@ function processGame() {
     }   
 
     class Bird extends Npc {
+        // Simple flying object which the player should not hit
         constructor(game) {            
-            // run constructor from parent class
-            // in child class 'super' must be called before 'this'
             super(
                 game,
                 {
@@ -388,17 +379,9 @@ function processGame() {
             this.frame.height += 1;            
             this.frame.currentState = 1;
 
-            this.vx = Math.random() * 0.1 + .2;   
-            
-            
-            //console.log(this)
+            this.vx = Math.random() * 0.1 + .2;               
         }        
     } 
-
-    /* TODO 
-    Demon - common enemy - 1 point
-    Nightmare - rare enemy - 5 points
-    Bird - dont touch, minus 3 points */
 
     const game = new Game(ctx, canvas.width, canvas.height);
     
