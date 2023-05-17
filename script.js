@@ -46,6 +46,7 @@ function processGame() {
             this.entities = [];
             this.entityInterval = 400;
             this.entityTimer = 0;
+            this.timer = 1;
 
             this.enemyTypes = ['nightmare', 'demon'];
             this.alliesTypes = ['bird']; 
@@ -59,20 +60,37 @@ function processGame() {
             */
             this.entityTypes = [...this.enemyTypes, ...this.alliesTypes, ];    
 
+            let baseInterval = 200;
+            this.entityConf = [
+                {
+                    name: 'nightmare',
+                    interval: baseInterval + Math.random()*baseInterval
+                },
+                {
+                    name: 'demon',
+                    interval: Math.random()*baseInterval,
+                },
+                {
+                    name: 'bird',
+                    interval: baseInterval + Math.random()*baseInterval
+                },
+            ]
+
         }
         update(dt) {
             // === update entire game ===
             
             // only contain items where object.deleteMarker = false
             this.entities = this.entities.filter(object=>!object.deleteMarker);
-            
-            // === periodic creations ===
-            if (this.entityTimer > this.entityInterval) {
-                this.#addNewEntity();
-                this.entityTimer = 0;
-            } else {
-                this.entityTimer += dt;
-            }
+
+            this.timer += dt;
+
+            this.entityConf.forEach(entity => {
+                let condition = Math.floor(this.timer % entity.interval) == 0;
+                if (condition) {
+                    this.#addNewEntity(entity.name);
+                }
+            })
             
             this.entities.forEach(obj=>obj.update(dt));
 
@@ -99,29 +117,26 @@ function processGame() {
 
         }
         // private methods (call only within class)
-        #addNewEntity() {
+        #addRandEntity() {
             const randEntity = this.entityTypes[
                 Math.floor(Math.random()*this.entityTypes.length)
             ];
-
-            switch (randEntity) {
-                case 'nightmare':
-                    this.entities.push(new Nightmare(this));
-                    break;
-                case 'demon':
-                    this.entities.push(new Demon(this));
-                    break;
-                case 'bird':
-                    this.entities.push(new Bird(this));
-                    break;
-            }
-            
+            this.#addRandEntity(randEntity);                        
+        }
+        #addNewEntity(entity) {            
+            this.entities.push(this.#dict_EntityToClass(entity));
             // entities with lower y will be in front
-            this.entities.sort((a,b)=> a.y - b.y);
-
-            /* demons.sort((a, b)=>{
-                return a.scale - b.scale;
-            }) */
+            this.entities.sort((a,b)=> a.y - b.y);            
+        }
+        #dict_EntityToClass(entity){
+            switch (entity) {
+                case 'nightmare':
+                    return new Nightmare(this);                    
+                case 'demon':
+                    return new Demon(this);                    
+                case 'bird':
+                    return new Bird(this);                    
+            }
         }
     }
 
@@ -325,6 +340,14 @@ function processGame() {
             this.newY = Math.random() * (canvas.height - this.height);
             this.changePosRate = Math.floor(Math.random() * 40 + 20);
 
+            // how many points you get from hitting npc
+            this.price = 1;
+
+            this.hitbox = {
+                carr: [Math.floor(Math.random()*255), Math.floor(Math.random()*255), Math.floor(Math.random()*255)],                
+            };            
+            this.hitbox.cstring = getRGBString(this.hitbox.carr);
+
 
         }
         draw() {
@@ -334,14 +357,17 @@ function processGame() {
                 this.frame.current*this.frame.width, 
                 this.frame.currentState*this.frame.height,
                 this.frame.width, this.frame.height,
-                this.x, this.y, this.width, this.height);        
+                this.x, this.y, this.width, this.height);    
+            
+            collisionCtx.fillStyle = this.hitbox.cstring;
+            collisionCtx.fillRect(this.x, this.y, this.width, this.height);
         }
         update(dt) {
             super.update(dt);
             this.move(dt, 'linear1');
 
         }
-        move(dt, pattern='') {
+        move(dt, pattern='', reset = '') {
             // === MOVING PATTERNS ===
             /** pattern: string */
     
@@ -357,8 +383,18 @@ function processGame() {
                 case "linear1":
                     // linear 1 axis
                     // moves by the x axis and no changes by y
-                    this.x-=this.vx*dt;
+                    this.x -= this.vx*dt;
                     break;
+                case "bounce":                    
+                    // === HANDLE X ===
+                    this.x -= this.vx*dt;                    
+
+                    // === HANDLE Y ===
+                    this.y -= this.vy*dt;                    
+                    // bounce
+                    if (this.y <= 0 || this.y >= canvas.height - this.height) {
+                        this.vy *= -1;            
+                    }; 
                 case "linearSin":
                     // linear 1 axis
                     // moves by the x axis and as sin by y                
@@ -397,8 +433,7 @@ function processGame() {
                     this.x = this.x0 * Math.sin(this.angular.ang * Math.PI/180 * this.angular.sinK) + this.x0;
                     this.y = this.y0 * Math.cos(this.angular.ang * Math.PI/180 * this.angular.cosK) + this.y0;
                     this.angular.ang += this.angular.speed*dt;
-                    break;
-    
+                    break;    
                 case "randPos":
                     // random position
                     if (dt % this.changePosRate == 0) {
@@ -421,13 +456,7 @@ function processGame() {
                     dx = (this.x - this.newX);
                     dy = (this.y - this.newY);
                     this.x -= dx/this.changePosRate;
-                    this.y -= dy/this.changePosRate;
-                    /*
-                    dx = (this.x - this.newX);
-                    dy = (this.y - this.newY);
-                    this.x -= dx/this.changePosRate;
-                    this.y -= dy/this.changePosRate;
-                    */
+                    this.y -= dy/this.changePosRate;                    
     
                     //document.addEventListener('mousemove', onMouseMove, false);
                     break;
@@ -435,8 +464,21 @@ function processGame() {
                 default:
                     this.x-=this.vx*dt;
                     this.y-=this.vx*dt;
-            }            
-            //if (this.x + this.width < 0) this.x = canvas.width;
+            }     
+            
+            switch(reset) {
+                case 'carousel':
+                    if (this.x < -this.width) this.x = canvas.width;
+                    break;
+                case 'delete':
+                    // delete items passed the screen
+                    if (this.x < -this.width) this.deleteMarker = true;
+                    break;
+                default:
+                    // pass  
+                
+            }
+            
         }
     }
 
@@ -460,7 +502,9 @@ function processGame() {
             this.setFrameProps(2);
 
             this.vx = Math.random() * 0.1 + .2;  
-            this.y = this.game.height - this.height - 20;            
+            this.y = this.game.height - this.height - 20;           
+            
+            this.price = 5;
         }        
         draw() {
             this.game.ctx.save() // snapshot of all canvas settings
@@ -492,7 +536,9 @@ function processGame() {
             this.frame.height += 1;            
             this.frame.currentState = 1;
 
-            this.vx = Math.random() * 0.1 + .2;               
+            this.vx = Math.random() * 0.1 + .2;   
+            
+            this.price = -10;
         }        
     } 
 
@@ -514,36 +560,12 @@ function processGame() {
             this.setFrameProps(Math.random() * 1 + 1);
             
             this.vx = Math.random() * 0.1 + .2;      
-            this.y = Math.random()*this.game.height * 0.6;  
-
-            this.hitbox = {
-                carr: [Math.floor(Math.random()*255), Math.floor(Math.random()*255), Math.floor(Math.random()*255)],                
-            };            
-            this.hitbox.cstring = getRGBString(this.hitbox.carr);
+            this.y = Math.random()*this.game.height * 0.6;              
             
         }
 
         update(dt) {
-            super.update(dt)
-            /*
-            // === HANDLE X ===
-            this.x -= this.directionX;
-
-            reset = '';
-            if (reset === 'carousel') {
-                if (this.x < -canvas.width) {
-                    this.x = canvas.width;
-            } else {
-                // delete items passed the screen
-                if (this.x < -this.width) this.deleteMarker = true;
-            } 
-
-            // === HANDLE Y ===
-            this.y -= this.directionY;
-            // bounce
-            if (this.y <= 0 || this.y >= canvas.height - this.height) {
-                this.directionY *= -1;            
-            };  */
+            super.update(dt)           
 
             // GAME OVER
             if (this.x < - this.width) gameOver = true;
@@ -554,8 +576,7 @@ function processGame() {
             super.draw();
             this.game.ctx.restore(); // return all snapshot settings
 
-            collisionCtx.fillStyle = this.hitbox.cstring;
-            collisionCtx.fillRect(this.x, this.y, this.width, this.height);
+            
 
         }   
 
@@ -633,7 +654,7 @@ function processGame() {
             if (obj.hitbox) {
                 if (obj.hitbox.cstring === getRGBString(pixel_color)){
                     obj.deleteMarker = true;     
-                    score++;
+                    score += obj.price;
                 }   
             }                 
         });
@@ -685,29 +706,3 @@ function processGame() {
     animate(0);
 
 }
-
-
-// === User stories ===
-
-/* TODO 
-
-# extend hit regions for all NPCs
-# hit scores
-
-    Demon - common enemy - 1 point
-    Nightmare - rare enemy - 5 points
-    Bird - dont touch, minus 3 points 
-
-# !!! Check if entities are deleted from array
-
-
-# Npc.move()
-    all patterns should be verified
-
-
-    
-# Refactor bgs and EXPLOSIONS
-
-# still need gameFrame?
-    
-*/
