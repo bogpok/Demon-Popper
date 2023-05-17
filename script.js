@@ -64,11 +64,11 @@ function processGame() {
             this.entityConf = [
                 {
                     name: 'nightmare',
-                    interval: baseInterval + Math.random()*baseInterval
+                    interval: baseInterval*2 + Math.random()*baseInterval
                 },
                 {
                     name: 'demon',
-                    interval: Math.random()*baseInterval,
+                    interval: Math.random()*baseInterval/2,
                 },
                 {
                     name: 'bird',
@@ -86,7 +86,7 @@ function processGame() {
             this.timer += dt;
 
             this.entityConf.forEach(entity => {
-                let condition = Math.floor(this.timer % entity.interval) == 0;
+                let condition = Math.floor(this.timer % Math.floor(entity.interval)) == 0;
                 if (condition) {
                     this.#addNewEntity(entity.name);
                 }
