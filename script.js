@@ -46,7 +46,7 @@ function processGame() {
             this.entities = [];
             this.entityInterval = 400;
             this.entityTimer = 0;
-            this.timer = 0;
+            this.timer = 1;
 
             this.enemyTypes = ['nightmare', 'demon'];
             this.alliesTypes = ['bird']; 
@@ -60,18 +60,19 @@ function processGame() {
             */
             this.entityTypes = [...this.enemyTypes, ...this.alliesTypes, ];    
 
+            let baseInterval = 200;
             this.entityConf = [
                 {
                     name: 'nightmare',
-                    interval: 600*2
+                    interval: baseInterval + Math.random()*baseInterval
                 },
                 {
                     name: 'demon',
-                    interval: 400
+                    interval: Math.random()*baseInterval,
                 },
                 {
                     name: 'bird',
-                    interval: 600
+                    interval: baseInterval + Math.random()*baseInterval
                 },
             ]
 
@@ -339,6 +340,14 @@ function processGame() {
             this.newY = Math.random() * (canvas.height - this.height);
             this.changePosRate = Math.floor(Math.random() * 40 + 20);
 
+            // how many points you get from hitting npc
+            this.price = 1;
+
+            this.hitbox = {
+                carr: [Math.floor(Math.random()*255), Math.floor(Math.random()*255), Math.floor(Math.random()*255)],                
+            };            
+            this.hitbox.cstring = getRGBString(this.hitbox.carr);
+
 
         }
         draw() {
@@ -348,7 +357,10 @@ function processGame() {
                 this.frame.current*this.frame.width, 
                 this.frame.currentState*this.frame.height,
                 this.frame.width, this.frame.height,
-                this.x, this.y, this.width, this.height);        
+                this.x, this.y, this.width, this.height);    
+            
+            collisionCtx.fillStyle = this.hitbox.cstring;
+            collisionCtx.fillRect(this.x, this.y, this.width, this.height);
         }
         update(dt) {
             super.update(dt);
@@ -490,7 +502,9 @@ function processGame() {
             this.setFrameProps(2);
 
             this.vx = Math.random() * 0.1 + .2;  
-            this.y = this.game.height - this.height - 20;            
+            this.y = this.game.height - this.height - 20;           
+            
+            this.price = 5;
         }        
         draw() {
             this.game.ctx.save() // snapshot of all canvas settings
@@ -522,7 +536,9 @@ function processGame() {
             this.frame.height += 1;            
             this.frame.currentState = 1;
 
-            this.vx = Math.random() * 0.1 + .2;               
+            this.vx = Math.random() * 0.1 + .2;   
+            
+            this.price = -10;
         }        
     } 
 
@@ -544,12 +560,7 @@ function processGame() {
             this.setFrameProps(Math.random() * 1 + 1);
             
             this.vx = Math.random() * 0.1 + .2;      
-            this.y = Math.random()*this.game.height * 0.6;  
-
-            this.hitbox = {
-                carr: [Math.floor(Math.random()*255), Math.floor(Math.random()*255), Math.floor(Math.random()*255)],                
-            };            
-            this.hitbox.cstring = getRGBString(this.hitbox.carr);
+            this.y = Math.random()*this.game.height * 0.6;              
             
         }
 
@@ -565,8 +576,7 @@ function processGame() {
             super.draw();
             this.game.ctx.restore(); // return all snapshot settings
 
-            collisionCtx.fillStyle = this.hitbox.cstring;
-            collisionCtx.fillRect(this.x, this.y, this.width, this.height);
+            
 
         }   
 
@@ -644,7 +654,7 @@ function processGame() {
             if (obj.hitbox) {
                 if (obj.hitbox.cstring === getRGBString(pixel_color)){
                     obj.deleteMarker = true;     
-                    score++;
+                    score += obj.price;
                 }   
             }                 
         });
