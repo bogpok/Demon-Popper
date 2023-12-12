@@ -1,2 +1,1 @@
-he = {'kek':'lol'};
-console.log(he['kek'])
+// test js

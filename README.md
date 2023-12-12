@@ -1,5 +1,5 @@
-# Demon-Popper
-A casual game made with vanilla JS
+# Demon Popper
+Challenging times have befallen this forest. Are you able to rid it of demons?
 
 Thy this game:
 https://bogpok.github.io/Demon-Popper/
